@@ -5,7 +5,7 @@
 
 %% gen_server callbacks
 -export([
-    start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2,
+    start_link/1, start/1, init/1, handle_call/3, handle_cast/2, handle_info/2,
     terminate/2, code_change/3, stop/0]).
 
 %% API Methods
@@ -33,34 +33,40 @@
 start_link(Module) ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [Module], []).
 
+-spec start(Module::atom()) ->
+    {ok, Pid::pid()} | {error, Reason::atom()}.
+
+start(Module) ->
+    gen_server:start({local, ?MODULE}, ?MODULE, [Module], []).
+
 -spec stop() -> ok.
 
 stop() ->
-    gen_server:call(?MODULE, stop).
+    catch gen_server:call(?MODULE, stop).
 
 -spec send_toast(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_toast(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, "toast", BaseURL, Class, toast(Params)}).
+    gen_server:cast(?MODULE, {send, ["toast", BaseURL, Class, toast(Params)]}).
 
 -spec send_tile(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_tile(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, "token", BaseURL, Class, tile(Params)}).
+    gen_server:cast(?MODULE, {send, ["token", BaseURL, Class, tile(Params)]}).
 
 -spec send_notification(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_notification(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, undefined, BaseURL, Class, notification(Params)}).
+    gen_server:cast(?MODULE, {send, [undefined, BaseURL, Class, notification(Params)]}).
 
 -spec send_raw(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_raw(BaseURL, Class, XML) ->
-    gen_server:cast(?MODULE, {send, undefined, BaseURL, Class, raw(XML)}).
+    gen_server:cast(?MODULE, {send, [undefined, BaseURL, Class, raw(XML)]}).
 
 -spec tile_param(
     Name :: binary(), 
@@ -181,7 +187,7 @@ to_xml(#tile_param{name=Name, attrs=Attrs, content=Content}) ->
     lists:foldl(fun({Var,Val}, Res) ->
         % TODO: sanitize Val
         Res ++ " " ++ Var ++ "='" ++ Val ++ "'"
-    end, <<>>, Attrs) ++ ">" ++
+    end, "", Attrs) ++ ">" ++
     % TODO: sanitize Content
     Content ++ 
     "</wp:" ++ Name ++ ">".
@@ -218,7 +224,7 @@ notification(Tag, Params) ->
         Tag -> ?XML_NOTIFY_BEGIN "<wp:" ++ Tag ++ ">"
     end ++
     case Params of
-    [{_,_}|_] ->
+    [#tile_param{}|_] ->
         lists:foldl(fun(Param, Res) ->
             Res ++ to_xml(Param)
         end, "", Params);
@@ -236,7 +242,7 @@ notification(Tag, Params) ->
     Class::string(), Params::[tile_param()]) -> ok.
 
 send(Module, Type, BaseURL, Class, Content) ->
-    Headers = case Type of 
+    InputHeaders = case Type of 
     undefined -> 
         [{"X-NotificationClass", Class}];
     _ -> [
@@ -245,8 +251,9 @@ send(Module, Type, BaseURL, Class, Content) ->
     ]
     end,
     Response = httpc:request(post, 
-        {BaseURL, Headers, "text/xml", Content}, 
+        {BaseURL, InputHeaders, "text/xml", Content}, 
         [{timeout, 5000}], []),
+    lager:debug("get response=~p~n", [Response]),
     case Response of
         {ok, {{_Version, 200, _Reason}, Headers, _BodyResp}} ->
             ConnStatus = proplists:get_value("x-deviceconnectionstatus", Headers),
@@ -263,8 +270,12 @@ send(Module, Type, BaseURL, Class, Content) ->
             case {Code, ConnStatus,NotStatus,SuscriptStatus} of
                 {_, _, "Dropped", "Expired"} ->
                     case Module of
-                        undefined -> ok;
-                        _ -> Module:expired(BaseURL)
+                        undefined -> 
+                            ok;
+                        _ ->
+                            lager:info("Expired: ~p:expired(~p).~n", 
+                                [Module, BaseURL]), 
+                            Module:expired(BaseURL)
                     end,
                     lager:warning("Expired token ~p~n", [BaseURL]);
                 {_, _, "Dropped", _} ->
