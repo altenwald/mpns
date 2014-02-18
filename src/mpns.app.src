@@ -1,0 +1,12 @@
+{application, mpns, [
+    {description, "Microsoft PUSH Network Service"},
+    {vsn, git},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib,
+        lager
+    ]},
+    {mod, {mpns_app, []}},
+    {env, []}
+]}.
