@@ -39,5 +39,5 @@ Tags = [
     mpns:tile_param("BackTitle", ActionClear, "My App (back)"),
     mpns:tile_param("BackContent", ActionClear, "back of medium Tile size content")
 ],
-mpns:send("http://...", ?CLASS_TILE_INMEDIATE, Tags),
+mpns:send_tile("http://...", ?CLASS_TILE_INMEDIATE, Tags),
 ```
