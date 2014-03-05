@@ -186,11 +186,12 @@ to_xml(#tile_param{name=Name, attrs=Attrs, content=Content}) ->
     "<wp:" ++ Name ++
     lists:foldl(fun({Var,Val}, Res) ->
         % TODO: sanitize Val
-        Res ++ " " ++ Var ++ "='" ++ Val ++ "'"
+        Res ++ " " ++ binary_to_list(Var) ++ "='" ++ 
+        binary_to_list(Val) ++ "'"
     end, "", Attrs) ++ ">" ++
     % TODO: sanitize Content
-    Content ++ 
-    "</wp:" ++ Name ++ ">".
+    binary_to_list(Content) ++ 
+    "</wp:" ++ binary_to_list(Name) ++ ">".
 
 -spec toast(Params::[tile_param()]) -> string().
 
