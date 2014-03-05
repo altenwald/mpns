@@ -183,7 +183,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec to_xml(tile_param()) -> string().
 
 to_xml(#tile_param{name=Name, attrs=Attrs, content=Content}) ->
-    "<wp:" ++ Name ++
+    "<wp:" ++ binary_to_list(Name) ++
     lists:foldl(fun({Var,Val}, Res) ->
         % TODO: sanitize Val
         Res ++ " " ++ binary_to_list(Var) ++ "='" ++ 
