@@ -30,8 +30,8 @@ send_text_test() ->
         ], []}}
     end),
     Tags = [
-        mpns:tile_param("Title", "MyGame!"),
-        mpns:tile_param("Content", "don't forget to play again!")
+        mpns:tile_param(<<"Title">>, <<"MyGame!">>),
+        mpns:tile_param(<<"Content">>, <<"don't forget to play again!">>)
     ],
     mpns:send_tile("whatever", ?CLASS_TILE_INMEDIATE, Tags),
     receive
@@ -73,8 +73,8 @@ expire_test() ->
         Pid ! ok
     end), 
     Tags = [
-        mpns:tile_param("Title", "MyGame!"),
-        mpns:tile_param("Content", "don't forget to play again!")
+        mpns:tile_param(<<"Title">>, <<"MyGame!">>),
+        mpns:tile_param(<<"Content">>, <<"don't forget to play again!">>)
     ],
     mpns:send_tile("whatever", ?CLASS_TILE_INMEDIATE, Tags),
     lists:foreach(fun(_) ->

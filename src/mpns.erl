@@ -10,14 +10,16 @@
 
 %% API Methods
 -export([
-    send_toast/3, send_tile/3, send_notification/3, send_raw/3,
+    send_toast/3, send_tile/3,
+    send_toast/5, send_tile/5,
+    send_notification/3, send_raw/3,
     tile_param/2, tile_param/3]).
 
 -define(TIMEOUT_MPNS_ON_ERROR, 2000).
 
 -define(XML_NOTIFY_BEGIN, 
     "<?xml version='1.0' encoding='utf-8'?>"
-    "<wp:Notification xmlns:wp='WPNotification'>").
+    "<wp:Notification xmlns:wp='WPNotification'~s>").
 
 -define(XML_NOTIFY_END,
     "</wp:Notification>").
@@ -48,19 +50,36 @@ stop() ->
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_toast(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, ["toast", BaseURL, Class, toast(Params)]}).
+    send_toast(BaseURL, Class, undefined, undefined, Params).
+
+-spec send_toast(
+    BaseURL::string(), Class::string(), Version::string() | undefined,
+    Template::string() | undefined, Params::[tile_param()]) -> ok.
+
+send_toast(BaseURL, Class, Version, Template, Params) ->
+    gen_server:cast(?MODULE, {send, [
+        "toast", BaseURL, Class, toast(Version, Template, Params)]}).
 
 -spec send_tile(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_tile(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, ["token", BaseURL, Class, tile(Params)]}).
+    send_tile(BaseURL, Class, undefined, undefined, Params).
+
+-spec send_tile(
+    BaseURL::string(), Class::string(), Version::string() | undefined,
+    Template::string() | undefined, Params::[tile_param()]) -> ok.
+
+send_tile(BaseURL, Class, Version, Template, Params) ->
+    gen_server:cast(?MODULE, {send, [
+        "token", BaseURL, Class, tile(Version, Template, Params)]}).
 
 -spec send_notification(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
 send_notification(BaseURL, Class, Params) ->
-    gen_server:cast(?MODULE, {send, [undefined, BaseURL, Class, notification(Params)]}).
+    gen_server:cast(?MODULE, {send, [
+        undefined, BaseURL, Class, notification(Params)]}).
 
 -spec send_raw(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
@@ -180,49 +199,68 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
+-spec to_string(string() | undefined, string()) -> string().
+
+to_string(undefined,_) -> "";
+to_string(Str,Attr) -> " " ++ Attr ++ "='" ++ Str ++ "'".
+
 -spec to_xml(tile_param()) -> string().
 
 to_xml(#tile_param{name=Name, attrs=Attrs, content=Content}) ->
     "<wp:" ++ binary_to_list(Name) ++
-    lists:foldl(fun({Var,Val}, Res) ->
-        % TODO: sanitize Val
-        Res ++ " " ++ binary_to_list(Var) ++ "='" ++ 
-        binary_to_list(Val) ++ "'"
+    lists:foldl(fun
+        ({Var,Val}, Res) ->
+            % TODO: sanitize Val
+            Res ++ " " ++ binary_to_list(Var) ++ "='" ++ 
+            binary_to_list(Val) ++ "'";
+        (clear, Res) ->
+            Res ++ " Action='Clear'"
     end, "", Attrs) ++ ">" ++
     % TODO: sanitize Content
     binary_to_list(Content) ++ 
     "</wp:" ++ binary_to_list(Name) ++ ">".
 
--spec toast(Params::[tile_param()]) -> string().
+-spec toast(
+    Version::string() | undefined, Template::string() | undefined,
+    Params::[tile_param()]) -> string().
 
-toast(Params) ->
-    notification("Toast", Params).
+toast(Version, Template, Params) ->
+    notification("Toast", Version, Template, Params).
 
--spec tile(Params::[tile_param()]) -> string().
+-spec tile(
+    Version::string() | undefined, Template::string() | undefined,
+    Params::[tile_param()]) -> string().
 
-tile(Params) ->
-    notification("Tile", Params).
+tile(Version, Template, Params) ->
+    notification("Tile", Version, Template, Params).
 
 -spec raw(XML::string()) -> string().
 
 raw(XML) ->
-    notification(undefined, XML).
+    notification(undefined, undefined, undefined, XML).
 
 -spec notification(Params::[tile_param()]) -> string().
 
 notification(Params) ->
-    notification(undefined, Params).
+    notification(undefined, undefined, undefined, Params).
 
 -type notification_type() :: string() | undefined.
 
 -spec notification(
-    Type::notification_type(), 
+    Type::notification_type(),
+    Version::string() | undefined,
+    Template::string() | undefined,
     Params::[tile_param()] | string()) -> string().
 
-notification(Tag, Params) ->
+notification(Tag, Version, Template, Params) ->
+    Ver = to_string(Version, "Version"),
+    Tpl = to_string(Template, "Template"),
     case Tag of
-        undefined -> ?XML_NOTIFY_BEGIN;
-        Tag -> ?XML_NOTIFY_BEGIN "<wp:" ++ Tag ++ ">"
+        undefined ->
+            lists:flatten(io_lib:format(?XML_NOTIFY_BEGIN, [Ver]));
+        Tag ->
+            lists:flatten(io_lib:format(?XML_NOTIFY_BEGIN, [Ver])) ++ 
+            "<wp:" ++ Tag ++ Tpl ++ ">"
     end ++
     case Params of
     [#tile_param{}|_] ->

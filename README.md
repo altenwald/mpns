@@ -7,7 +7,7 @@ For send this code to the device:
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<wp:Notification xmlns:wp="WPNotification">
+<wp:Notification xmlns:wp="WPNotification" Version="2.0">
   <wp:Tile>
     <wp:SmallBackgroundImage Action="Clear">/small.jpg</wp:SmallBackgroundImage>
     <wp:WideBackgroundImage Action="Clear">/wide.jpg</wp:WideBackgroundImage>
@@ -26,18 +26,18 @@ For send this code to the device:
 The code to use:
 
 ```erlang
-ActionClear = [{"Action", "Clear"}],
+ActionClear = [clear],
 Tags = [
-    mpns:tile_param("SmallBackgroundImage", ActionClear, "/small.jpg"),
-    mpns:tile_param("WideBackgroundImage", ActionClear, "/wide.jpg"),
-    mpns:tile_param("WideBackBackgroundImage", ActionClear, "/back.jpg"),
-    mpns:tile_param("WideBackContent", ActionClear, "/back_content.jpg"),
-    mpns:tile_param("BackgroundImage", ActionClear, "/background.jpg"),
-    mpns:tile_param("Count", ActionClear, "5"),
-    mpns:tile_param("Title", ActionClear, "My App"),
-    mpns:tile_param("BackBackgroundImage", ActionClear, "/back_background.jpg"),
-    mpns:tile_param("BackTitle", ActionClear, "My App (back)"),
-    mpns:tile_param("BackContent", ActionClear, "back of medium Tile size content")
+    mpns:tile_param(<<"SmallBackgroundImage">>, ActionClear, <<"/small.jpg">>),
+    mpns:tile_param(<<"WideBackgroundImage">>, ActionClear, <<"/wide.jpg">>),
+    mpns:tile_param(<<"WideBackBackgroundImage">>, ActionClear, <<"/back.jpg">>),
+    mpns:tile_param(<<"WideBackContent">>, ActionClear, <<"/back_content.jpg">>),
+    mpns:tile_param(<<"BackgroundImage">>, ActionClear, <<"/background.jpg">>),
+    mpns:tile_param(<<"Count">>, ActionClear, <<"5">>),
+    mpns:tile_param(<<"Title">>, ActionClear, <<"My App">>),
+    mpns:tile_param(<<"BackBackgroundImage">>, ActionClear, <<"/back_background.jpg">>),
+    mpns:tile_param(<<"BackTitle">>, ActionClear, <<"My App (back)">>),
+    mpns:tile_param(<<"BackContent">>, ActionClear, <<"back of medium Tile size content">>)
 ],
-mpns:send_tile("http://...", ?CLASS_TILE_INMEDIATE, Tags),
+mpns:send_tile("http://...", ?CLASS_TILE_INMEDIATE, "2.0", undefined, Tags),
 ```
