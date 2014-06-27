@@ -1,6 +1,8 @@
 MPNS
 ====
 
+[![Build Status](https://api.travis-ci.org/altenwald/mpns.png)](https://travis-ci.org/altenwald/mpns)
+
 Microsoft Push Network Service is an application you can add to your project for give support to send push notifications to Windows Phone devices.
 
 For send this code to the device:
