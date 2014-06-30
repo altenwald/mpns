@@ -289,6 +289,7 @@ send(Module, Type, BaseURL, Class, Content) ->
         {"X-NotificationClass", Class}
     ]
     end,
+    lager:debug("send content=~p~n", [Content]),
     Response = httpc:request(post, 
         {BaseURL, InputHeaders, "text/xml", Content}, 
         [{timeout, 5000}], []),
