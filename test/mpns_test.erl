@@ -54,7 +54,7 @@ expire_test() ->
             {"x-subscriptionstatus", "Expired"}
         ], []}}
     end),
-    meck:new(mpns_test_module),
+    meck:new(mpns_test_module, [non_strict]),
     meck:expect(mpns_test_module, expired, fun("whatever") ->
         Pid ! ok
     end), 

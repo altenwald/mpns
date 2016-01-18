@@ -13,6 +13,9 @@
     send_toast/3, send_tile/3,
     send_toast/5, send_tile/5,
     send_notification/3, send_raw/3,
+    sync_send_toast/3, sync_send_tile/3,
+    sync_send_toast/5, sync_send_tile/5,
+    sync_send_notification/3, sync_send_raw/3,
     tile_param/2, tile_param/3]).
 
 -define(TIMEOUT_MPNS_ON_ERROR, 2000).
@@ -53,12 +56,32 @@ stop() ->
 send_toast(BaseURL, Class, Params) ->
     send_toast(BaseURL, Class, undefined, undefined, Params).
 
+-spec sync_send_toast(
+    BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
+
+sync_send_toast(BaseURL, Class, Params) ->
+    sync_send_toast(BaseURL, Class, undefined, undefined, Params).
+
 -spec send_toast(
     BaseURL::string(), Class::string(), Version::string() | undefined,
-    Template::string() | undefined, Params::[tile_param()]) -> ok.
+    Template::string() | undefined, Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
 
 send_toast(BaseURL, Class, Version, Template, Params) ->
     gen_server:cast(?MODULE, {send, [
+        "toast", BaseURL, Class, toast(Version, Template, Params)]}).
+
+-spec sync_send_toast(
+    BaseURL::string(), Class::string(), Version::string() | undefined,
+    Template::string() | undefined, Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+sync_send_toast(BaseURL, Class, Version, Template, Params) ->
+    gen_server:call(?MODULE, {send, [
         "toast", BaseURL, Class, toast(Version, Template, Params)]}).
 
 -spec send_tile(
@@ -75,6 +98,26 @@ send_tile(BaseURL, Class, Version, Template, Params) ->
     gen_server:cast(?MODULE, {send, [
         "token", BaseURL, Class, tile(Version, Template, Params)]}).
 
+-spec sync_send_tile(
+    BaseURL::string(), Class::string(), Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+sync_send_tile(BaseURL, Class, Params) ->
+    sync_send_tile(BaseURL, Class, undefined, undefined, Params).
+
+-spec sync_send_tile(
+    BaseURL::string(), Class::string(), Version::string() | undefined,
+    Template::string() | undefined, Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+sync_send_tile(BaseURL, Class, Version, Template, Params) ->
+    gen_server:call(?MODULE, {send, [
+        "token", BaseURL, Class, tile(Version, Template, Params)]}).
+
 -spec send_notification(
     BaseURL::string(), Class::string(), Params::[tile_param()]) -> ok.
 
@@ -87,6 +130,25 @@ send_notification(BaseURL, Class, Params) ->
 
 send_raw(BaseURL, Class, XML) ->
     gen_server:cast(?MODULE, {send, [undefined, BaseURL, Class, raw(XML)]}).
+
+-spec sync_send_notification(
+    BaseURL::string(), Class::string(), Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+sync_send_notification(BaseURL, Class, Params) ->
+    gen_server:call(?MODULE, {send, [
+        undefined, BaseURL, Class, notification(Params)]}).
+
+-spec sync_send_raw(
+    BaseURL::string(), Class::string(), Params::[tile_param()]) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+sync_send_raw(BaseURL, Class, XML) ->
+    gen_server:call(?MODULE, {send, [undefined, BaseURL, Class, raw(XML)]}).
 
 -spec tile_param(
     Name :: binary(), 
