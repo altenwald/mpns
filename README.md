@@ -56,8 +56,10 @@ information in this way:
 The meaning of those params are:
 
 * `Code` is a HTTP code and in the error should be something like 5xx or 4xx.
-* `Notif` is a notification status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
-* `Conn` is a connection status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
-* `Subs` is a subscription status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
+* `Notif` is a notification status. You can see it in [this table][1].
+* `Conn` is a connection status. You can see it in [this table][1].
+* `Subs` is a subscription status. You can see it in [this table][1].
 
 More information don't hesitate to write to me or open an issue. Enjoy!
+
+[1]: https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes
