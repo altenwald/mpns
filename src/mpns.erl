@@ -107,13 +107,6 @@ tile_param(Name, Attrs, Content) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
 -spec init( Args :: [term()] ) -> 
     {ok, State :: #state{}}.
 
@@ -121,24 +114,12 @@ init([Module]) ->
     {ok, #state{module=Module}}.
 
 
-%%--------------------------------------------------------------------
-%% Function: handle_info(Info, State) -> {noreply, State} |
-%%                                       {noreply, State, Timeout} |
-%%                                       {stop, Reason, State}
-%% Description: Handling all non call/cast messages
-%%--------------------------------------------------------------------
 -spec handle_info(Msg::any(), State::#state{}) ->
     {noreply, State::#state{}}.
 
 handle_info(_Info, State) ->
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: handle_cast(Msg, State) -> {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, State}
-%% Description: Handling cast messages
-%%--------------------------------------------------------------------
 -spec handle_cast(Msg::any(), State::#state{}) ->
     {noreply, State::#state{}}.
 
@@ -147,16 +128,6 @@ handle_cast({send, Msg}, #state{module=Module}=State) ->
         erlang:apply(fun send/5, [Module|Msg])
     end),
     {noreply, State}.
-
-%%--------------------------------------------------------------------
-%% Function: %% handle_call(Request, From, State) -> {reply, Reply, State} |
-%%                                      {reply, Reply, State, Timeout} |
-%%                                      {noreply, State} |
-%%                                      {noreply, State, Timeout} |
-%%                                      {stop, Reason, Reply, State} |
-%%                                      {stop, Reason, State}
-%% Description: Handling call messages
-%%--------------------------------------------------------------------
 
 -spec handle_call(Msg::any(), From::{pid(),_}, State::#state{}) ->
     {noreply, State::#state{}} |
@@ -172,23 +143,10 @@ handle_call({send, Msg}, From, #state{module=Module}=State) ->
     end),
     {noreply, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
-%% cleaning up. When it returns, the gen_server terminates with Reason.
-%% The return value is ignored.
-%%--------------------------------------------------------------------
-
 -spec terminate(Reason::any(), State::#state{}) -> ok.
 
 terminate(_Reason, _State) ->
     ok.
-
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
 
 -spec code_change(OldVsn::string(), State::#state{}, Extra::any()) ->
     {ok, State::#state{}}.
