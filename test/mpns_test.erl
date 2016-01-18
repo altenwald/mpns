@@ -4,20 +4,7 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("mpns.hrl").
 
--define(meck_lager(), begin
-    meck:new(lager),
-    meck:expect(lager, dispatch_log, fun(_Severity, _Metadata, _Format, _Args, _Size) ->
-        ?debugFmt(_Format, _Args),
-        ok
-    end),
-    meck:expect(lager, dispatch_log, fun(_Severity, _Module, _Function, _Line, _Pid, _Traces, _Format, _Args, _TruncSize) ->
-        ?debugFmt(_Format, _Args),
-        ok
-    end)
-end).
-
 send_text_test() ->
-    ?meck_lager(),
     mpns:start(undefined),
     Pid = self(),
     meck:new(httpc),
@@ -56,7 +43,6 @@ send_text_test() ->
     ok.
 
 expire_test() ->
-    ?meck_lager(),
     mpns:start(mpns_test_module),
     Pid = self(),
     meck:new(httpc),

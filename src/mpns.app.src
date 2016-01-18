@@ -5,7 +5,7 @@
     {applications, [
         kernel,
         stdlib,
-        lager
+        xmerl
     ]},
     {mod, {mpns_app, []}},
     {env, []}

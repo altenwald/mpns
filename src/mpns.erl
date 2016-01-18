@@ -16,6 +16,7 @@
     tile_param/2, tile_param/3]).
 
 -define(TIMEOUT_MPNS_ON_ERROR, 2000).
+-define(TRIES_MPNS_ON_ERROR, 3).
 
 -define(XML_NOTIFY_BEGIN, 
     "<?xml version='1.0' encoding='utf-8'?>"
@@ -281,6 +282,16 @@ notification(Tag, Version, Template, Params) ->
     Class::string(), Params::[tile_param()]) -> ok.
 
 send(Module, Type, BaseURL, Class, Content) ->
+    send(Module, Type, BaseURL, Class, Content, ?TRIES_MPNS_ON_ERROR).
+
+-spec send(
+    Module::atom(), Type::string() | undefined, BaseURL::string(), 
+    Class::string(), Params::[tile_param()], Tries::non_neg_integer()) ->
+        {ok, string(), string(), string()} |
+        {error, atom()} |
+        {error, string(), string(), string(), string()}.
+
+send(Module, Type, BaseURL, Class, Content, Tries) ->
     InputHeaders = case Type of 
     undefined -> 
         [{"X-NotificationClass", Class}];
@@ -289,20 +300,15 @@ send(Module, Type, BaseURL, Class, Content) ->
         {"X-NotificationClass", Class}
     ]
     end,
-    lager:debug("send content=~p~n", [Content]),
     Response = httpc:request(post, 
         {BaseURL, InputHeaders, "text/xml", Content}, 
         [{timeout, 5000}], []),
-    lager:debug("get response=~p~n", [Response]),
     case Response of
         {ok, {{_Version, 200, _Reason}, Headers, _BodyResp}} ->
             ConnStatus = proplists:get_value("x-deviceconnectionstatus", Headers),
             NotStatus = proplists:get_value("x-notificationstatus", Headers),
             SuscriptStatus = proplists:get_value("x-subscriptionstatus", Headers),
-            lager:info(
-                "Sent to ~p with Conn=~p; Notify=~p; Suscription=~p~n", 
-                [BaseURL, ConnStatus, NotStatus, SuscriptStatus]
-            );
+            {ok, ConnStatus, NotStatus, SuscriptStatus};
         {ok, {{_Version, Code, _Reason}, Headers, _BodyResp}} ->
             ConnStatus = proplists:get_value("x-deviceconnectionstatus", Headers),
             NotStatus = proplists:get_value("x-notificationstatus", Headers),
@@ -311,34 +317,30 @@ send(Module, Type, BaseURL, Class, Content) ->
                 {_, _, "Dropped", "Expired"} ->
                     case Module of
                         undefined -> 
-                            ok;
+                            {error, expired};
                         _ ->
-                            lager:info("Expired: ~p:expired(~p).~n", 
-                                [Module, BaseURL]), 
-                            Module:expired(BaseURL)
-                    end,
-                    lager:warning("Expired token ~p~n", [BaseURL]);
+                            Module:expired(BaseURL),
+                            {error, expired}
+                    end;
                 {_, _, "Dropped", _} ->
-                    lager:warning("Dropped message due to ~s from ~p~n", [SuscriptStatus, BaseURL]);
+                    {error, Code, ConnStatus, NotStatus, SuscriptStatus};
                 {503, _, _, _} ->
-                    lager:warning("Microsoft Server Error (503) with URL ~p~n", [BaseURL]);
+                    {error, internal};
                 _ ->
-                    lager:error(
-                        "Sent from ~p with Code=~p; Conn=~p; Notify=~p; Suscription=~p~n", 
-                        [BaseURL, Code, ConnStatus, NotStatus, SuscriptStatus]
-                    )
+                    {error, Code, ConnStatus, NotStatus, SuscriptStatus}
             end;
         {error, no_scheme} ->
-            lager:error("invalid URL [~p]~n", [BaseURL]);
+            {error, invalid_url};
+        {error, timeout} when Tries > 0 ->
+            timer:sleep(?TIMEOUT_MPNS_ON_ERROR),
+            send(Module, Type, BaseURL, Class, Content, Tries-1);
         {error, timeout} ->
-            lager:warning("timeout in request to MPNS retrying in ~p seconds.~n", [?TIMEOUT_MPNS_ON_ERROR]),
+            {error, timeout};
+        {error, {failed_connect,_ConnectInfo}} when Tries > 0 ->
             timer:sleep(?TIMEOUT_MPNS_ON_ERROR),
-            send(Module, Type, BaseURL, Class, Content);
+            send(Module, Type, BaseURL, Class, Content, Tries-1);
         {error, {failed_connect,_ConnectInfo}} ->
-            lager:warning("cannot connect to MPNS, retrying in ~p seconds.~n", [?TIMEOUT_MPNS_ON_ERROR]),
-            timer:sleep(?TIMEOUT_MPNS_ON_ERROR),
-            send(Module, Type, BaseURL, Class, Content);
-        Any ->
-            lager:error("Fatal error: ~p~n", [Any])
-    end,
-    ok.
+            {error, failed_connect};
+        _ ->
+            {error, fatal_error}
+    end.
