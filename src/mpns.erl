@@ -220,10 +220,10 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
--spec to_string(string() | undefined, string()) -> string().
+-spec attr(string() | undefined, string()) -> string().
 
-to_string(undefined,_) -> "";
-to_string(Str,Attr) -> " " ++ Attr ++ "='" ++ Str ++ "'".
+attr(undefined,_) -> "";
+attr(Str,Attr) -> " " ++ Attr ++ "='" ++ xmerl_lib:export_text(Str) ++ "'".
 
 -spec to_xml(tile_param()) -> string().
 
@@ -231,14 +231,11 @@ to_xml(#tile_param{name=Name, attrs=Attrs, content=Content}) ->
     "<wp:" ++ binary_to_list(Name) ++
     lists:foldl(fun
         ({Var,Val}, Res) ->
-            % TODO: sanitize Val
-            Res ++ " " ++ binary_to_list(Var) ++ "='" ++ 
-            binary_to_list(Val) ++ "'";
+            Res ++ attr(binary_to_list(Val), binary_to_list(Var));
         (clear, Res) ->
             Res ++ " Action='Clear'"
     end, "", Attrs) ++ ">" ++
-    % TODO: sanitize Content
-    binary_to_list(Content) ++ 
+    xmerl_lib:export_text(binary_to_list(Content)) ++ 
     "</wp:" ++ binary_to_list(Name) ++ ">".
 
 -spec toast(
@@ -274,8 +271,8 @@ notification(Params) ->
     Params::[tile_param()] | string()) -> string().
 
 notification(Tag, Version, Template, Params) ->
-    Ver = to_string(Version, "Version"),
-    Tpl = to_string(Template, "Template"),
+    Ver = attr(Version, "Version"),
+    Tpl = attr(Template, "Template"),
     case Tag of
         undefined ->
             lists:flatten(io_lib:format(?XML_NOTIFY_BEGIN, [Ver]));
