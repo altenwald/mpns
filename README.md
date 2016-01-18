@@ -43,3 +43,21 @@ Tags = [
 ],
 mpns:send_tile("http://...", ?CLASS_TILE_INMEDIATE, "2.0", undefined, Tags),
 ```
+
+You can use `mpns:sync_send_tile/5` instead. This function returns the
+information in this way:
+
+```
+{ok, Conn::string(), Notif::string(), Subs::string()} |
+{error, atom()} |
+{error, Code::string(), Conn::string(), Notif::string(), Subs::string()}.
+```
+
+The meaning of those params are:
+
+* `Code` is a HTTP code and in the error should be something like 5xx or 4xx.
+* `Notif` is a notification status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
+* `Conn` is a connection status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
+* `Subs` is a subscription status. You can see it in [this table][https://msdn.microsoft.com/es-es/library/windows/apps/ff941100(v=vs.105).aspx#BKMK_PushNotificationServiceResponseCodes].
+
+More information don't hesitate to write to me or open an issue. Enjoy!
